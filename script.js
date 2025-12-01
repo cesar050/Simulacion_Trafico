@@ -5,28 +5,38 @@ const ctx = canvas.getContext('2d');
 // Configuración del Redondel y el Carro
 const centroX = canvas.width / 2;
 const centroY = canvas.height / 2;
-const radioRedondel = 280; // Radio de la carretera
+const radioRedondel = 280;
 const anchoCarretera = 80;
 
 // Estado de los carros
-let numCarros = 10; // Número de carros en el redondel
-const distanciaSeguridad = 0.4; // Distancia angular mínima entre carros (en radianes)
-let angulos = []; // Arreglo para guardar el ángulo de cada carro
-let velocidades = []; // Velocidad individual de cada carro
+let numCarros = 10;
+const METROS_POR_PIXEL = 0.03;
+
+// Utilidades de conversión
+function pixelesAMetros(px) { return px * METROS_POR_PIXEL; }
+function metrosAPixeles(m) { return m / METROS_POR_PIXEL; }
+function metrosAAngulo(m) { return metrosAPixeles(m) / radioRedondel; } // theta = s_px / r_px
+
+// Reglas de seguridad y espaciado inicial
+const distanciaMinimaMetros = 3;
+const distanciaInicialMetros = 5;
+const distanciaSeguridad = metrosAAngulo(distanciaMinimaMetros); // en radianes
+let angulos = [];
+let velocidades = [];
 
 // Variables de configuración
-let duracionParadaSegundos = 3; // Segundos de parada (configurable)
-let duracionParada = duracionParadaSegundos * 60; // Frames (a 60fps)
+let duracionParadaSegundos = 3;
+let duracionParada = duracionParadaSegundos * 60;
 
 // Registro de paradas
-let registroParadas = {}; // {carroId: {veces: 0, tiempoTotal: 0}}
+let registroParadas = {};
 
-const velocidadNormal = 0.01; // Velocidad de giro normal
-let animacionId; // Para guardar la referencia de la animación
-let ejecutando = false; // Estado de la simulación
-let carroDetenido = -1; // Índice del carro detenido (-1 = ninguno)
-let tiempoParada = 0; // Contador para la parada
-let tiempoInicioParada = 0; // Timestamp de inicio de parada
+const velocidadNormal = 0.01; 
+let animacionId; 
+let ejecutando = false; 
+let carroDetenido = -1; 
+let tiempoParada = 0; 
+let tiempoInicioParada = 0; 
 
 // Colores para los carros
 const coloresCarros = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF", "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A"];
@@ -36,7 +46,8 @@ function inicializarCarros() {
     angulos = [];
     velocidades = [];
     registroParadas = {}; // Resetear registro al cambiar número de carros
-    const anguloInicial = (Math.PI * 2) / numCarros;
+    // Espaciado inicial basado en metros, no en división uniforme del círculo
+    const anguloInicial = metrosAAngulo(distanciaInicialMetros);
     for (let i = 0; i < numCarros; i++) {
         angulos.push(i * anguloInicial);
         velocidades.push(velocidadNormal);
@@ -74,39 +85,6 @@ function dibujarEscenario() {
     ctx.stroke();
     ctx.setLineDash([]); // Resetear línea punteada
     ctx.closePath();
-    
-    // 4. Dibujar calle de entrada (parte superior)
-    const anchoCalleAcceso = 70;
-    ctx.fillStyle = "#555";
-    ctx.fillRect(centroX - anchoCalleAcceso/2, 0, anchoCalleAcceso, centroY - radioRedondel + anchoCarretera/2 + 10);
-    
-    // Línea divisoria de calle de entrada
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-    ctx.setLineDash([10, 10]);
-    ctx.beginPath();
-    ctx.moveTo(centroX, 0);
-    ctx.lineTo(centroX, centroY - radioRedondel + anchoCarretera/2 + 10);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    
-    // 5. Dibujar calle de salida (parte inferior)
-    ctx.fillStyle = "#555";
-    ctx.fillRect(centroX - anchoCalleAcceso/2, centroY + radioRedondel + anchoCarretera/2 - 10, anchoCalleAcceso, canvas.height);
-    
-    // Línea divisoria de calle de salida
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-    ctx.setLineDash([10, 10]);
-    ctx.beginPath();
-    ctx.moveTo(centroX, centroY + radioRedondel + anchoCarretera/2 - 10);
-    ctx.lineTo(centroX, canvas.height);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    
-    // Etiquetas de las calles
-    ctx.fillStyle = "white";
-    ctx.font = "bold 16px Arial";
-    ctx.fillText("ENTRADA", centroX - 40, 30);
-    ctx.fillText("SALIDA", centroX - 30, canvas.height - 15);
 }
 
 // Función para dibujar los carros (los puntos)
@@ -145,7 +123,9 @@ function dibujarCarros() {
         // Calcular y mostrar distancia al siguiente carro
         const siguienteIndex = (i + 1) % numCarros;
         const distancia = distanciaAngular(angulos[i], angulos[siguienteIndex]);
-        const distanciaMetros = (distancia * radioRedondel).toFixed(1); // Convertir a "metros"
+        // Longitud de arco en píxeles y conversión a metros
+        const arcoPx = distancia * radioRedondel;
+        const distanciaMetros = pixelesAMetros(arcoPx).toFixed(1);
         
         // Calcular punto medio entre los dos carros para mostrar la distancia
         const anguloMedio = angulos[i] + distancia / 2;
@@ -306,13 +286,13 @@ function aplicarConfiguracion() {
     const nuevoNumCarros = parseInt(document.getElementById('numCarros').value);
     
     // Validar valores
-    if (isNaN(nuevoTiempo) || nuevoTiempo < 0.1 || nuevoTiempo > 10) {
-        alert('El tiempo de parada debe estar entre 0.1 y 10 segundos');
+    if (isNaN(nuevoTiempo) || nuevoTiempo < 0.1 || nuevoTiempo > 20) {
+        alert('El tiempo de parada debe estar entre 0.1 y 20 segundos');
         return;
     }
     
-    if (isNaN(nuevoNumCarros) || nuevoNumCarros < 2 || nuevoNumCarros > 20) {
-        alert('El número de carros debe estar entre 2 y 20');
+    if (isNaN(nuevoNumCarros) || nuevoNumCarros < 1 || nuevoNumCarros > 20) {
+        alert('El número de carros debe estar entre 1 y 20');
         return;
     }
     
