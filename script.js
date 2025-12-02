@@ -68,7 +68,7 @@ function dibujarEscenario() {
     ctx.fill();
     ctx.closePath();
 
-    // 2. Dibujar la isla central (Círculo pequeño hueco)
+    // 2. Dibujar la isla central
     ctx.beginPath();
     ctx.arc(centroX, centroY, radioRedondel - anchoCarretera/2, 0, Math.PI * 2);
     ctx.fillStyle = "#8BC34A"; // Verde (césped)
@@ -77,17 +77,17 @@ function dibujarEscenario() {
     ctx.stroke();
     ctx.closePath();
     
-    // 3. Dibujar línea divisoria (opcional, para estética)
+    // 3. Dibujar línea divisoria
     ctx.beginPath();
     ctx.arc(centroX, centroY, radioRedondel, 0, Math.PI * 2);
     ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
     ctx.setLineDash([5, 15]); // Línea punteada
     ctx.stroke();
-    ctx.setLineDash([]); // Resetear línea punteada
+    ctx.setLineDash([]);
     ctx.closePath();
 }
 
-// Función para dibujar los carros (los puntos)
+// Función para dibujar los carros
 function dibujarCarros() {
     for (let i = 0; i < numCarros; i++) {
         // Calcular posición X e Y basándonos en el ángulo actual de cada carro
@@ -95,9 +95,9 @@ function dibujarCarros() {
         const x = centroX + Math.cos(angulos[i]) * radioRedondel;
         const y = centroY + Math.sin(angulos[i]) * radioRedondel;
 
-        // Dibujar el punto
+        // Dibujar el carro
         ctx.beginPath();
-        ctx.arc(x, y, 12, 0, Math.PI * 2); // Radio del punto: 12px (más grande)
+        ctx.arc(x, y, 12, 0, Math.PI * 2); 
         ctx.fillStyle = coloresCarros[i % coloresCarros.length];
         ctx.fill();
         ctx.strokeStyle = "white";
@@ -179,7 +179,6 @@ function bucle() {
 
     // Actualizar velocidad de cada carro según detección de colisión
     for (let i = 0; i < numCarros; i++) {
-        // Si este carro es el detenido, velocidad = 0
         if (i === carroDetenido) {
             velocidades[i] = 0;
             continue;
@@ -217,8 +216,6 @@ function bucle() {
     for (let i = 0; i < numCarros; i++) {
         angulos[i] += velocidades[i];
     }
-
-    // Solicitar el siguiente frame
     animacionId = requestAnimationFrame(bucle);
 }
 
